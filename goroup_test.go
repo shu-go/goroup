@@ -10,7 +10,7 @@ import (
 )
 
 func TestDo(t *testing.T) {
-	doneChan := goroup.Done(func() { time.Sleep(1 * time.Second) })
+	doneChan := goroup.Done(func() { time.Sleep(100 * time.Millisecond) })
 	<-doneChan
 }
 
@@ -20,6 +20,7 @@ func TestRoutine(t *testing.T) {
 		r.Wait()
 		r.Go()
 		r.Wait()
+		r.Cancel()
 
 		<-r.Done()
 	})
@@ -30,6 +31,7 @@ func TestRoutine(t *testing.T) {
 		g.Go()
 		g.WaitAny()
 		g.Wait()
+		g.Cancel()
 
 		<-g.DoneAny()
 		<-g.Done()
@@ -43,6 +45,7 @@ func TestRoutine(t *testing.T) {
 		g.Go()
 		g.WaitAny()
 		g.Wait()
+		g.Cancel()
 
 		<-g.DoneAny()
 		<-g.Done()
@@ -52,7 +55,7 @@ func TestRoutine(t *testing.T) {
 	t.Run("Go", func(t *testing.T) {
 		var result1 int64
 		j1 := goroup.Ready(func(c goroup.Cancelled) {
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
 			if !c() {
 				atomic.AddInt64(&result1, 1)
 			}
@@ -70,7 +73,7 @@ func TestRoutine(t *testing.T) {
 	t.Run("Cancel", func(t *testing.T) {
 		var result1 int64
 		j1 := goroup.Ready(func(c goroup.Cancelled) {
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
 			if !c() {
 				atomic.AddInt64(&result1, 1)
 			}
@@ -89,7 +92,7 @@ func TestRoutine(t *testing.T) {
 	t.Run("Done", func(t *testing.T) {
 		var result1 int64
 		j1 := goroup.Ready(func(c goroup.Cancelled) {
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond)
 			if !c() {
 				atomic.AddInt64(&result1, 1)
 			}
@@ -107,19 +110,19 @@ func TestRoutine(t *testing.T) {
 func TestGoroup(t *testing.T) {
 	var result int64
 	j1 := goroup.Ready(func(c goroup.Cancelled) {
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 		if !c() {
 			atomic.AddInt64(&result, 1)
 		}
 	})
 	j2 := goroup.Ready(func(c goroup.Cancelled) {
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(20 * time.Millisecond)
 		if !c() {
 			atomic.AddInt64(&result, 2)
 		}
 	})
 	j3 := goroup.Ready(func(c goroup.Cancelled) {
-		time.Sleep(300 * time.Millisecond)
+		time.Sleep(30 * time.Millisecond)
 		if !c() {
 			atomic.AddInt64(&result, 4)
 		}
@@ -245,7 +248,7 @@ func TestGoroup(t *testing.T) {
 func TestSequence(t *testing.T) {
 	var result int64
 	r := goroup.Ready(func(c goroup.Cancelled) {
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 		if !c() {
 			atomic.AddInt64(&result, 1)
 		}
