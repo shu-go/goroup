@@ -1,4 +1,4 @@
-package gorou
+package goroup
 
 import (
 	"fmt"
