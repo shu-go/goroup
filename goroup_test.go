@@ -1,22 +1,23 @@
-package gorou
+package goroup_test
 
 import (
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"bitbucket.org/shu/goroup"
 	"bitbucket.org/shu/gotwant"
 )
 
 func TestDo(t *testing.T) {
-	doneChan := Do(func() { time.Sleep(1 * time.Second) })
+	doneChan := goroup.Do(func() { time.Sleep(1 * time.Second) })
 	<-doneChan
 }
 
 func TestRoutine(t *testing.T) {
 	t.Run("Run", func(t *testing.T) {
 		var result1 int64
-		j1 := Routine(func(c Cancelled) {
+		j1 := goroup.Routine(func(c goroup.Cancelled) {
 			time.Sleep(500 * time.Millisecond)
 			if !c() {
 				atomic.AddInt64(&result1, 1)
@@ -34,7 +35,7 @@ func TestRoutine(t *testing.T) {
 	})
 	t.Run("Cancel", func(t *testing.T) {
 		var result1 int64
-		j1 := Routine(func(c Cancelled) {
+		j1 := goroup.Routine(func(c goroup.Cancelled) {
 			time.Sleep(500 * time.Millisecond)
 			if !c() {
 				atomic.AddInt64(&result1, 1)
@@ -55,19 +56,19 @@ func TestRoutine(t *testing.T) {
 
 func TestGroup(t *testing.T) {
 	var result int64
-	j1 := Routine(func(c Cancelled) {
+	j1 := goroup.Routine(func(c goroup.Cancelled) {
 		time.Sleep(500 * time.Millisecond)
 		if !c() {
 			atomic.AddInt64(&result, 1)
 		}
 	})
-	j2 := Routine(func(c Cancelled) {
+	j2 := goroup.Routine(func(c goroup.Cancelled) {
 		time.Sleep(200 * time.Millisecond)
 		if !c() {
 			atomic.AddInt64(&result, 2)
 		}
 	})
-	j3 := Routine(func(c Cancelled) {
+	j3 := goroup.Routine(func(c goroup.Cancelled) {
 		time.Sleep(300 * time.Millisecond)
 		if !c() {
 			atomic.AddInt64(&result, 4)
@@ -82,8 +83,8 @@ func TestGroup(t *testing.T) {
 		atomic.StoreInt64(&result, 0)
 
 		jj1.Run()
-		//g := Group(&jj1, &jj2, &jj3)
-		g := Group()
+		//g := goroup.Group(&jj1, &jj2, &jj3)
+		g := goroup.Group()
 		g.Add(&jj1)
 		g.Add(&jj2)
 		g.Add(&jj3)
@@ -100,7 +101,7 @@ func TestGroup(t *testing.T) {
 		atomic.StoreInt64(&result, 0)
 
 		jj1.Run()
-		g := Group(&jj1, &jj2, &jj3)
+		g := goroup.Group(&jj1, &jj2, &jj3)
 		g.Run()
 		g.Run()
 		g.Run()
@@ -128,7 +129,7 @@ func TestGroup(t *testing.T) {
 
 		atomic.StoreInt64(&result, 0)
 
-		g := Group(&jj1, &jj2, &jj3)
+		g := goroup.Group(&jj1, &jj2, &jj3)
 		g.Run()
 
 		g.WaitAny() // jj2
