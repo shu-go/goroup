@@ -55,6 +55,12 @@ func Ready(f func(c Cancelled)) Routine {
 }
 
 // Routine holds a goroutinized function.
+//
+// It has 3 states:
+//     Done : function is nil, function is end, function is cancelled
+//     Not Going : Routine is not Go(). This also be treated as done. (Routine).Wait() returns immediately.
+//                 To make sure going, call Go().
+//     Going : Routine is Go()ing. This is not done.
 type Routine struct {
 	id string
 
