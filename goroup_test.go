@@ -1,6 +1,7 @@
 package goroup_test
 
 import (
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -14,6 +15,39 @@ func TestDo(t *testing.T) {
 	<-doneChan
 }
 
+func TestStates(t *testing.T) {
+	t.Run("Routine", func(t *testing.T) {
+		r := goroup.Ready(func(c goroup.Cancelled) { time.Sleep(100 * time.Millisecond) })
+		<-r.Done() // does not block
+
+		r.Go()
+		select {
+		case <-r.Done(): // blocks
+			t.Error("!?")
+		default:
+		}
+
+		time.Sleep(100 * time.Millisecond)
+		<-r.Done() // does not block
+	})
+
+	t.Run("Group", func(t *testing.T) {
+		r := goroup.Ready(func(c goroup.Cancelled) { time.Sleep(100 * time.Millisecond) })
+		g := goroup.Group(&r)
+		<-g.Done() // does not block
+
+		g.Go()
+		select {
+		case <-g.Done(): // blocks
+			t.Error("!?")
+		default:
+		}
+
+		time.Sleep(100 * time.Millisecond)
+		<-g.Done() // does not block
+	})
+}
+
 func TestRoutine(t *testing.T) {
 	t.Run("NullRoutine", func(t *testing.T) {
 		r := goroup.Routine{}
@@ -24,6 +58,7 @@ func TestRoutine(t *testing.T) {
 
 		<-r.Done()
 	})
+
 	t.Run("NullGoroup", func(t *testing.T) {
 		g := goroup.Goroup{}
 		g.WaitAny()
@@ -38,6 +73,7 @@ func TestRoutine(t *testing.T) {
 
 		g.PurgeDone()
 	})
+
 	t.Run("GoroupWithNullRoutine", func(t *testing.T) {
 		g := goroup.Group(&goroup.Routine{})
 		g.WaitAny()
@@ -52,6 +88,7 @@ func TestRoutine(t *testing.T) {
 
 		g.PurgeDone()
 	})
+
 	t.Run("Go", func(t *testing.T) {
 		var result1 int64
 		j1 := goroup.Ready(func(c goroup.Cancelled) {
@@ -70,6 +107,7 @@ func TestRoutine(t *testing.T) {
 		j1.Wait()
 		gotwant.Test(t, atomic.LoadInt64(&result1), int64(1))
 	})
+
 	t.Run("Cancel", func(t *testing.T) {
 		var result1 int64
 		j1 := goroup.Ready(func(c goroup.Cancelled) {
@@ -89,6 +127,7 @@ func TestRoutine(t *testing.T) {
 		j1.Wait()
 		gotwant.Test(t, atomic.LoadInt64(&result1), int64(0))
 	})
+
 	t.Run("Done", func(t *testing.T) {
 		var result1 int64
 		j1 := goroup.Ready(func(c goroup.Cancelled) {
@@ -242,6 +281,62 @@ func TestGoroup(t *testing.T) {
 		gotwant.Test(t, atomic.LoadInt64(&result), int64(7))
 		g.Wait()
 		gotwant.Test(t, atomic.LoadInt64(&result), int64(7))
+	})
+}
+
+func TestCollision(t *testing.T) {
+	t.Run("MultiGo", func(t *testing.T) {
+		var result int64
+		r := goroup.Ready(func(c goroup.Cancelled) {
+			atomic.AddInt64(&result, 1)
+		})
+
+		r.Go()
+		r.Go()
+		r.Wait()
+
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(1))
+	})
+
+	t.Run("MultiGoAsync", func(t *testing.T) {
+		var result int64
+		r := goroup.Ready(func(c goroup.Cancelled) {
+			atomic.AddInt64(&result, 1)
+		})
+
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		go func() {
+			r.Go()
+			wg.Done()
+		}()
+
+		wg.Add(1)
+		go func() {
+			r.Go()
+			wg.Done()
+		}()
+
+		wg.Wait()
+		r.Wait()
+
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(1))
+	})
+
+	t.Run("MultiGroup", func(t *testing.T) {
+		var result int64
+		r := goroup.Ready(func(c goroup.Cancelled) {
+			atomic.AddInt64(&result, 1)
+		})
+		g1 := goroup.Group(&r)
+		g2 := goroup.Group(&r)
+
+		g1.Go()
+		g2.Go()
+		g1.Wait()
+		g2.Wait()
+
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(1))
 	})
 }
 
