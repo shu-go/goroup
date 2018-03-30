@@ -305,19 +305,15 @@ func TestCollision(t *testing.T) {
 		})
 
 		wg := sync.WaitGroup{}
-		wg.Add(1)
-		go func() {
-			r.Go()
-			wg.Done()
-		}()
-
-		wg.Add(1)
-		go func() {
-			r.Go()
-			wg.Done()
-		}()
-
+		for i := 0; i < 100; i++ {
+			wg.Add(1)
+			go func() {
+				r.Go()
+				wg.Done()
+			}()
+		}
 		wg.Wait()
+
 		r.Wait()
 
 		gotwant.Test(t, atomic.LoadInt64(&result), int64(1))
@@ -335,6 +331,28 @@ func TestCollision(t *testing.T) {
 		g2.Go()
 		g1.Wait()
 		g2.Wait()
+
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(1))
+	})
+
+	t.Run("MultiGroupAsync", func(t *testing.T) {
+		var result int64
+		r := goroup.Ready(func(c goroup.Cancelled) {
+			atomic.AddInt64(&result, 1)
+		})
+		g1 := goroup.Group(&r)
+
+		wg := sync.WaitGroup{}
+		for i := 0; i < 100; i++ {
+			wg.Add(1)
+			go func() {
+				g1.Go()
+				wg.Done()
+			}()
+		}
+		wg.Wait()
+
+		g1.Wait()
 
 		gotwant.Test(t, atomic.LoadInt64(&result), int64(1))
 	})
