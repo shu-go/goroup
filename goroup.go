@@ -93,14 +93,8 @@ func (r *Routine) Go() {
 
 	r.doneMut.Lock()
 	if r.doneChan != nil {
-		select {
-		case <-r.doneChan:
-			// can restart
-		default:
-			// running
-			r.doneMut.Unlock()
-			return
-		}
+		r.doneMut.Unlock()
+		return
 	}
 	r.doneChan = make(chan struct{})
 	r.doneOnce = sync.Once{}
