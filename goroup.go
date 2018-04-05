@@ -18,8 +18,17 @@ func Done(f func()) <-chan struct{} {
 	return doneChan
 }
 
-// Cancelled is a check function if a Routine is requested to cancel.
-type Cancelled func() bool
+// Cancelled is a chan having checking function if a Routine is requested to cancel.
+type Cancelled chan struct{}
+
+func (c Cancelled) Cancelled() bool {
+	select {
+	case <-c:
+		return true
+	default:
+	}
+	return false
+}
 
 // Ready makes a Routine with f goroutinized.
 //
@@ -31,7 +40,7 @@ type Cancelled func() bool
 // Example:
 // r := goroup.Routine(func(c Cancelled) {
 //     for {
-//	       if c() {
+//	       if c.Cancelled() {
 //	           return
 //	       }
 //
@@ -100,14 +109,7 @@ func (r *Routine) Go() {
 	r.doneOnce = sync.Once{}
 	r.doneMut.Unlock()
 
-	c := func() bool {
-		select {
-		case <-r.doneChan:
-			return true
-		default:
-		}
-		return false
-	}
+	c := Cancelled(r.doneChan)
 
 	go func() {
 		r.run(c)
