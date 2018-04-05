@@ -93,7 +93,7 @@ func TestRoutine(t *testing.T) {
 		var result1 int64
 		j1 := goroup.Ready(func(c goroup.Cancelled) {
 			time.Sleep(50 * time.Millisecond)
-			if !c() {
+			if !c.Cancelled() {
 				atomic.AddInt64(&result1, 1)
 			}
 		})
@@ -112,7 +112,7 @@ func TestRoutine(t *testing.T) {
 		var result1 int64
 		j1 := goroup.Ready(func(c goroup.Cancelled) {
 			time.Sleep(50 * time.Millisecond)
-			if !c() {
+			if !c.Cancelled() {
 				atomic.AddInt64(&result1, 1)
 			}
 		})
@@ -132,7 +132,7 @@ func TestRoutine(t *testing.T) {
 		var result1 int64
 		j1 := goroup.Ready(func(c goroup.Cancelled) {
 			time.Sleep(50 * time.Millisecond)
-			if !c() {
+			if !c.Cancelled() {
 				atomic.AddInt64(&result1, 1)
 			}
 		})
@@ -150,19 +150,19 @@ func TestGoroup(t *testing.T) {
 	var result int64
 	j1 := goroup.Ready(func(c goroup.Cancelled) {
 		time.Sleep(50 * time.Millisecond)
-		if !c() {
+		if !c.Cancelled() {
 			atomic.AddInt64(&result, 1)
 		}
 	})
 	j2 := goroup.Ready(func(c goroup.Cancelled) {
 		time.Sleep(20 * time.Millisecond)
-		if !c() {
+		if !c.Cancelled() {
 			atomic.AddInt64(&result, 2)
 		}
 	})
 	j3 := goroup.Ready(func(c goroup.Cancelled) {
 		time.Sleep(30 * time.Millisecond)
-		if !c() {
+		if !c.Cancelled() {
 			atomic.AddInt64(&result, 4)
 		}
 	})
@@ -362,7 +362,7 @@ func TestSequence(t *testing.T) {
 	var result int64
 	r := goroup.Ready(func(c goroup.Cancelled) {
 		time.Sleep(50 * time.Millisecond)
-		if !c() {
+		if !c.Cancelled() {
 			atomic.AddInt64(&result, 1)
 		}
 	})
