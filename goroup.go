@@ -38,7 +38,7 @@ func (c Cancelled) Cancelled() bool {
 //
 // NOTE: If the function  f have loop, you should check if you requested to cancel, by calling c().
 // Example:
-// r := goroup.Routine(func(c Cancelled) {
+// r := goroup.Ready(func(c Cancelled) {
 //     for {
 //	       if c.Cancelled() {
 //	           return
@@ -49,28 +49,28 @@ func (c Cancelled) Cancelled() bool {
 // })
 //
 // Example:
-// r := goroup.Routine(func(c Cancelled) {
+// r := goroup.Ready(func(c Cancelled) {
 //	   // :
 // })
 // r.Go() // starts a goroutine
 // r.Wait() // wait for the goroutine end
 // r.Cancel() // cancel the goroutine
 // <-r.Done() // wait for the goroutine end
-func Ready(f func(c Cancelled)) Routine {
-	return Routine{
+func Ready(f func(c Cancelled)) routine {
+	return routine{
 		run: f,
 		id:  fmt.Sprintf("%v", time.Now().String()),
 	}
 }
 
-// Routine holds a goroutinized function.
+// routine holds a goroutinized function.
 //
 // It has 3 states:
 //     Done : function is nil, function is end, function is cancelled
-//     Not Going : Routine is not Go(). This also be treated as done. (Routine).Wait() returns immediately.
+//     Not Going : routine is not Go(). This also be treated as done. (routine).Wait() returns immediately.
 //                 To make sure going, call Go().
-//     Going : Routine is Go()ing. This is not done.
-type Routine struct {
+//     Going : routine is Go()ing. This is not done.
+type routine struct {
 	id string
 
 	doneMut  sync.Mutex
@@ -80,7 +80,7 @@ type Routine struct {
 	run func(Cancelled)
 }
 
-func (r *Routine) markDone() {
+func (r *routine) markDone() {
 	r.doneMut.Lock()
 	r.doneOnce.Do(func() {
 		if r.doneChan != nil {
@@ -95,7 +95,7 @@ func (r *Routine) markDone() {
 // The function f passed in Ready(f) is called as a goroutine.
 // Multiple call of Go() while its running is ignored.
 // Multiple call of Go() after end or cancel is also ignored.
-func (r *Routine) Go() {
+func (r *routine) Go() {
 	if r.run == nil {
 		return
 	}
@@ -118,7 +118,7 @@ func (r *Routine) Go() {
 }
 
 // Wait waits the goroutine ends or is cancelled.
-func (r *Routine) Wait() {
+func (r *routine) Wait() {
 	r.doneMut.Lock()
 	if r.doneChan == nil {
 		r.doneMut.Unlock()
@@ -130,37 +130,37 @@ func (r *Routine) Wait() {
 }
 
 // Cancel cancels the goroutine.
-func (r *Routine) Cancel() {
+func (r *routine) Cancel() {
 	r.markDone()
 }
 
 // Done returns receive-only chan that is sent when the goroutine is done.
-func (r *Routine) Done() <-chan struct{} {
+func (r *routine) Done() <-chan struct{} {
 	return Done(r.Wait)
 }
 
-// Goroup is a group of Routines.
-type Goroup struct {
+// group is a group of Routines.
+type group struct {
 	m        sync.Mutex
-	routines []*Routine
+	routines []*routine
 }
 
 // Group makes a group of Routines.
-func Group(routines ...*Routine) Goroup {
-	return Goroup{
+func Group(routines ...*routine) group {
+	return group{
 		routines: routines,
 	}
 }
 
 // Add adds a routine in the group.
-func (g *Goroup) Add(r *Routine) {
+func (g *group) Add(r *routine) {
 	g.m.Lock()
 	g.routines = append(g.routines, r)
 	g.m.Unlock()
 }
 
 // PurgeDone removes some Routines that are ended or cancelled.
-func (g *Goroup) PurgeDone() {
+func (g *group) PurgeDone() {
 	g.m.Lock()
 	clise.Filter(&g.routines, func(i int) bool {
 		select {
@@ -174,13 +174,13 @@ func (g *Goroup) PurgeDone() {
 }
 
 // Go starts all Routines.
-func (g *Goroup) Go() {
+func (g *group) Go() {
 	g.m.Lock()
 	if len(g.routines) == 0 {
 		g.m.Unlock()
 		return
 	}
-	routines := make([]*Routine, len(g.routines))
+	routines := make([]*routine, len(g.routines))
 	copy(routines, g.routines)
 	g.m.Unlock()
 
@@ -190,13 +190,13 @@ func (g *Goroup) Go() {
 }
 
 // Cancel cancels all Routines.
-func (g *Goroup) Cancel() {
+func (g *group) Cancel() {
 	g.m.Lock()
 	if len(g.routines) == 0 {
 		g.m.Unlock()
 		return
 	}
-	routines := make([]*Routine, len(g.routines))
+	routines := make([]*routine, len(g.routines))
 	copy(routines, g.routines)
 	g.m.Unlock()
 
@@ -206,13 +206,13 @@ func (g *Goroup) Cancel() {
 }
 
 // Cancel waits for all Routines end or are cancelled.
-func (g *Goroup) Wait() {
+func (g *group) Wait() {
 	g.m.Lock()
 	if len(g.routines) == 0 {
 		g.m.Unlock()
 		return
 	}
-	routines := make([]*Routine, len(g.routines))
+	routines := make([]*routine, len(g.routines))
 	copy(routines, g.routines)
 	g.m.Unlock()
 
@@ -222,13 +222,13 @@ func (g *Goroup) Wait() {
 }
 
 // Cancel waits for a Routine ends or is cancelled.
-func (g *Goroup) WaitAny() {
+func (g *group) WaitAny() {
 	g.m.Lock()
 	if len(g.routines) == 0 {
 		g.m.Unlock()
 		return
 	}
-	routines := make([]*Routine, len(g.routines))
+	routines := make([]*routine, len(g.routines))
 	copy(routines, g.routines)
 	g.m.Unlock()
 
@@ -236,7 +236,7 @@ func (g *Goroup) WaitAny() {
 	anyDoneChan := make(chan struct{})
 
 	for _, r := range routines {
-		go func(rr *Routine) {
+		go func(rr *routine) {
 			select {
 			case <-rr.Done():
 				anyDoneOnce.Do(func() {
@@ -251,11 +251,11 @@ func (g *Goroup) WaitAny() {
 }
 
 // Done returns receive-only chan that is sent when all goroutines are done.
-func (g *Goroup) Done() <-chan struct{} {
+func (g *group) Done() <-chan struct{} {
 	return Done(g.Wait)
 }
 
 // Done returns receive-only chan that is sent when a goroutine is done.
-func (g *Goroup) DoneAny() <-chan struct{} {
+func (g *group) DoneAny() <-chan struct{} {
 	return Done(g.WaitAny)
 }

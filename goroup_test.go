@@ -50,7 +50,7 @@ func TestStates(t *testing.T) {
 
 func TestRoutine(t *testing.T) {
 	t.Run("NullRoutine", func(t *testing.T) {
-		r := goroup.Routine{}
+		r := goroup.Ready(nil)
 		r.Wait()
 		r.Go()
 		r.Wait()
@@ -60,7 +60,7 @@ func TestRoutine(t *testing.T) {
 	})
 
 	t.Run("NullGoroup", func(t *testing.T) {
-		g := goroup.Goroup{}
+		g := goroup.Group()
 		g.WaitAny()
 		g.Wait()
 		g.Go()
@@ -75,7 +75,8 @@ func TestRoutine(t *testing.T) {
 	})
 
 	t.Run("GoroupWithNullRoutine", func(t *testing.T) {
-		g := goroup.Group(&goroup.Routine{})
+		r := goroup.Ready(nil)
+		g := goroup.Group(&r)
 		g.WaitAny()
 		g.Wait()
 		g.Go()
