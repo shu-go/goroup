@@ -8,19 +8,25 @@ import (
 
 // group is a group of Routines.
 type group struct {
+	*rawGroup
+}
+
+type rawGroup struct {
 	m        sync.Mutex
-	routines []*routine
+	routines []routine
 }
 
 // Group makes a group of Routines.
-func Group(routines ...*routine) group {
+func Group(routines ...routine) group {
 	return group{
-		routines: routines,
+		rawGroup: &rawGroup{
+			routines: routines,
+		},
 	}
 }
 
 // Add adds a routine in the group.
-func (g *group) Add(r *routine) {
+func (g *group) Add(r routine) {
 	g.m.Lock()
 	g.routines = append(g.routines, r)
 	g.m.Unlock()
@@ -47,7 +53,7 @@ func (g *group) Go() {
 		g.m.Unlock()
 		return
 	}
-	routines := make([]*routine, len(g.routines))
+	routines := make([]routine, len(g.routines))
 	copy(routines, g.routines)
 	g.m.Unlock()
 
@@ -63,7 +69,7 @@ func (g *group) Cancel() {
 		g.m.Unlock()
 		return
 	}
-	routines := make([]*routine, len(g.routines))
+	routines := make([]routine, len(g.routines))
 	copy(routines, g.routines)
 	g.m.Unlock()
 
@@ -79,7 +85,7 @@ func (g *group) Wait() {
 		g.m.Unlock()
 		return
 	}
-	routines := make([]*routine, len(g.routines))
+	routines := make([]routine, len(g.routines))
 	copy(routines, g.routines)
 	g.m.Unlock()
 
@@ -95,7 +101,7 @@ func (g *group) WaitAny() {
 		g.m.Unlock()
 		return
 	}
-	routines := make([]*routine, len(g.routines))
+	routines := make([]routine, len(g.routines))
 	copy(routines, g.routines)
 	g.m.Unlock()
 
@@ -103,7 +109,7 @@ func (g *group) WaitAny() {
 	anyDoneChan := make(chan struct{})
 
 	for _, r := range routines {
-		go func(rr *routine) {
+		go func(rr routine) {
 			select {
 			case <-rr.Done():
 				anyDoneOnce.Do(func() {

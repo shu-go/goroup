@@ -2,6 +2,7 @@ package goroup
 
 import (
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 )
@@ -55,10 +56,13 @@ func (c Cancelled) Cancelled() bool {
 // r.Cancel() // cancel the goroutine
 // <-r.Done() // wait for the goroutine end
 func Ready(f func(c Cancelled)) routine {
-	return routine{
-		run: f,
-		id:  fmt.Sprintf("%v", time.Now().String()),
+	r := routine{
+		rawRoutine: &rawRoutine{
+			run: f,
+			id:  fmt.Sprintf("%v %v", time.Now().String(), rand.Intn(100)),
+		},
 	}
+	return r
 }
 
 // routine holds a goroutinized function.
@@ -69,6 +73,14 @@ func Ready(f func(c Cancelled)) routine {
 //                 To make sure going, call Go().
 //     Going : routine is Go()ing. This is not done.
 type routine struct {
+	*rawRoutine
+}
+
+func (r *routine) String() string {
+	return fmt.Sprintf("<ID=%v, run=%p>", r.id, r.run)
+}
+
+type rawRoutine struct {
 	id string
 
 	doneMut  sync.Mutex
@@ -109,10 +121,10 @@ func (r *routine) Go() {
 
 	c := Cancelled(r.doneChan)
 
-	go func() {
-		r.run(c)
-		r.markDone()
-	}()
+	go func(rr routine, cc Cancelled) {
+		rr.run(cc)
+		rr.markDone()
+	}(*r, c)
 }
 
 func (r *routine) do() {
@@ -155,4 +167,8 @@ func (r *routine) Cancel() {
 // Done returns receive-only chan that is sent when the goroutine is done.
 func (r *routine) Done() <-chan struct{} {
 	return Done(r.Wait)
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }
