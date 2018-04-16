@@ -55,8 +55,8 @@ func (c Cancelled) Cancelled() bool {
 // r.Wait() // wait for the goroutine end
 // r.Cancel() // cancel the goroutine
 // <-r.Done() // wait for the goroutine end
-func Ready(f func(c Cancelled)) routine {
-	r := routine{
+func Ready(f func(c Cancelled)) Routine {
+	r := Routine{
 		rawRoutine: &rawRoutine{
 			run: f,
 			id:  fmt.Sprintf("%v %v", time.Now().String(), rand.Intn(100)),
@@ -65,18 +65,18 @@ func Ready(f func(c Cancelled)) routine {
 	return r
 }
 
-// routine holds a goroutinized function.
+// Routine holds a goroutinized function.
 //
 // It has 3 states:
 //     Done : function is nil, function is end, function is cancelled
-//     Not Going : routine is not Go(). This also be treated as done. (routine).Wait() returns immediately.
+//     Not Going : Routine is not Go(). This also be treated as done. (Routine).Wait() returns immediately.
 //                 To make sure going, call Go().
-//     Going : routine is Go()ing. This is not done.
-type routine struct {
+//     Going : Routine is Go()ing. This is not done.
+type Routine struct {
 	*rawRoutine
 }
 
-func (r *routine) String() string {
+func (r *Routine) String() string {
 	return fmt.Sprintf("<ID=%v, run=%p>", r.id, r.run)
 }
 
@@ -90,7 +90,7 @@ type rawRoutine struct {
 	run func(Cancelled)
 }
 
-func (r *routine) markDone() {
+func (r *Routine) markDone() {
 	r.doneMut.Lock()
 	r.doneOnce.Do(func() {
 		if r.doneChan != nil {
@@ -105,7 +105,7 @@ func (r *routine) markDone() {
 // The function f passed in Ready(f) is called as a goroutine.
 // Multiple call of Go() while its running is ignored.
 // Multiple call of Go() after end or cancel is also ignored.
-func (r *routine) Go() {
+func (r *Routine) Go() {
 	if r.run == nil {
 		return
 	}
@@ -121,13 +121,13 @@ func (r *routine) Go() {
 
 	c := Cancelled(r.doneChan)
 
-	go func(rr routine, cc Cancelled) {
+	go func(rr Routine, cc Cancelled) {
 		rr.run(cc)
 		rr.markDone()
 	}(*r, c)
 }
 
-func (r *routine) do() {
+func (r *Routine) do() {
 	if r.run == nil {
 		return
 	}
@@ -148,7 +148,7 @@ func (r *routine) do() {
 }
 
 // Wait waits the goroutine ends or is cancelled.
-func (r *routine) Wait() {
+func (r *Routine) Wait() {
 	r.doneMut.Lock()
 	if r.doneChan == nil {
 		r.doneMut.Unlock()
@@ -160,12 +160,12 @@ func (r *routine) Wait() {
 }
 
 // Cancel cancels the goroutine.
-func (r *routine) Cancel() {
+func (r *Routine) Cancel() {
 	r.markDone()
 }
 
 // Done returns receive-only chan that is sent when the goroutine is done.
-func (r *routine) Done() <-chan struct{} {
+func (r *Routine) Done() <-chan struct{} {
 	return Done(r.Wait)
 }
 
