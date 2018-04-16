@@ -10,11 +10,6 @@ import (
 	"bitbucket.org/shu/gotwant"
 )
 
-func TestDo(t *testing.T) {
-	doneChan := goroup.Done(func() { time.Sleep(100 * time.Millisecond) })
-	<-doneChan
-}
-
 func TestStates(t *testing.T) {
 	t.Run("Routine", func(t *testing.T) {
 		r := goroup.Ready(func(c goroup.Cancelled) { time.Sleep(100 * time.Millisecond) })

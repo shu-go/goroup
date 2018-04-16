@@ -7,17 +7,7 @@ import (
 	"time"
 )
 
-// Done returns receive-only chan that is sent when f() is done.
-func Done(f func()) <-chan struct{} {
-	doneChan := make(chan struct{})
-	go func() {
-		f()
-		doneChan <- struct{}{}
-	}()
-	return doneChan
-}
-
-// Cancelled is a chan having checking function if a Routine is requested to cancel.
+// Cancelled is a chan with checking function if a Routine is requested to cancel.
 type Cancelled chan struct{}
 
 func (c Cancelled) Cancelled() bool {
