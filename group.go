@@ -6,34 +6,34 @@ import (
 	"bitbucket.org/shu/clise"
 )
 
-// group is a group of Routines.
-type group struct {
+// Group is a Group of Routines.
+type Group struct {
 	*rawGroup
 }
 
 type rawGroup struct {
 	m        sync.Mutex
-	routines []routine
+	routines []Routine
 }
 
-// Group makes a group of Routines.
-func Group(routines ...routine) group {
-	return group{
+// Group makes a Group of Routines.
+func NewGroup(routines ...Routine) Group {
+	return Group{
 		rawGroup: &rawGroup{
 			routines: routines,
 		},
 	}
 }
 
-// Add adds a routine in the group.
-func (g *group) Add(r routine) {
+// Add adds a routine in the Group.
+func (g *Group) Add(r Routine) {
 	g.m.Lock()
 	g.routines = append(g.routines, r)
 	g.m.Unlock()
 }
 
 // PurgeDone removes some Routines that are ended or cancelled.
-func (g *group) PurgeDone() {
+func (g *Group) PurgeDone() {
 	g.m.Lock()
 	clise.Filter(&g.routines, func(i int) bool {
 		select {
@@ -47,13 +47,13 @@ func (g *group) PurgeDone() {
 }
 
 // Go starts all Routines.
-func (g *group) Go() {
+func (g *Group) Go() {
 	g.m.Lock()
 	if len(g.routines) == 0 {
 		g.m.Unlock()
 		return
 	}
-	routines := make([]routine, len(g.routines))
+	routines := make([]Routine, len(g.routines))
 	copy(routines, g.routines)
 	g.m.Unlock()
 
@@ -63,13 +63,13 @@ func (g *group) Go() {
 }
 
 // Cancel cancels all Routines.
-func (g *group) Cancel() {
+func (g *Group) Cancel() {
 	g.m.Lock()
 	if len(g.routines) == 0 {
 		g.m.Unlock()
 		return
 	}
-	routines := make([]routine, len(g.routines))
+	routines := make([]Routine, len(g.routines))
 	copy(routines, g.routines)
 	g.m.Unlock()
 
@@ -79,13 +79,13 @@ func (g *group) Cancel() {
 }
 
 // Cancel waits for all Routines end or are cancelled.
-func (g *group) Wait() {
+func (g *Group) Wait() {
 	g.m.Lock()
 	if len(g.routines) == 0 {
 		g.m.Unlock()
 		return
 	}
-	routines := make([]routine, len(g.routines))
+	routines := make([]Routine, len(g.routines))
 	copy(routines, g.routines)
 	g.m.Unlock()
 
@@ -95,13 +95,13 @@ func (g *group) Wait() {
 }
 
 // Cancel waits for a Routine ends or is cancelled.
-func (g *group) WaitAny() {
+func (g *Group) WaitAny() {
 	g.m.Lock()
 	if len(g.routines) == 0 {
 		g.m.Unlock()
 		return
 	}
-	routines := make([]routine, len(g.routines))
+	routines := make([]Routine, len(g.routines))
 	copy(routines, g.routines)
 	g.m.Unlock()
 
@@ -109,7 +109,7 @@ func (g *group) WaitAny() {
 	anyDoneChan := make(chan struct{})
 
 	for _, r := range routines {
-		go func(rr routine) {
+		go func(rr Routine) {
 			select {
 			case <-rr.Done():
 				anyDoneOnce.Do(func() {
@@ -124,11 +124,11 @@ func (g *group) WaitAny() {
 }
 
 // Done returns receive-only chan that is sent when all goroutines are done.
-func (g *group) Done() <-chan struct{} {
+func (g *Group) Done() <-chan struct{} {
 	return Done(g.Wait)
 }
 
 // Done returns receive-only chan that is sent when a goroutine is done.
-func (g *group) DoneAny() <-chan struct{} {
+func (g *Group) DoneAny() <-chan struct{} {
 	return Done(g.WaitAny)
 }
