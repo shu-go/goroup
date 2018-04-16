@@ -59,6 +59,26 @@ func TestRoutine(t *testing.T) {
 		<-r.Done()
 	})
 
+	t.Run("MassiveRoutine", func(t *testing.T) {
+		var result int64
+		f := func(c goroup.Cancelled) {
+			atomic.AddInt64(&result, 1)
+		}
+
+		rs := []goroup.Routine{}
+		for i := 0; i < 5000; i++ {
+			r := goroup.Ready(f)
+			r.Go()
+			rs = append(rs, r)
+		}
+
+		for _, r := range rs {
+			r.Wait()
+		}
+
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(5000))
+	})
+
 	t.Run("NullGoroup", func(t *testing.T) {
 		g := goroup.NewGroup()
 		g.WaitAny()
@@ -88,6 +108,46 @@ func TestRoutine(t *testing.T) {
 		<-g.Done()
 
 		g.PurgeDone()
+	})
+
+	t.Run("MassiveRoutineGroup", func(t *testing.T) {
+		var result int64
+		f := func(c goroup.Cancelled) {
+			atomic.AddInt64(&result, 1)
+		}
+
+		g := goroup.NewGroup()
+		for i := 0; i < 5000; i++ {
+			r := goroup.Ready(f)
+			g.Add(r)
+		}
+		g.Go()
+		g.Wait()
+
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(5000))
+	})
+
+	t.Run("MassiveGroup", func(t *testing.T) {
+		var result int64
+		f := func(c goroup.Cancelled) {
+			atomic.AddInt64(&result, 1)
+		}
+
+		gs := []goroup.Group{}
+
+		for i := 0; i < 5000; i++ {
+			g := goroup.NewGroup()
+			r := goroup.Ready(f)
+			g.Add(r)
+			g.Go()
+			gs = append(gs, g)
+		}
+
+		for _, g := range gs {
+			g.Wait()
+		}
+
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(5000))
 	})
 
 	t.Run("Go", func(t *testing.T) {
