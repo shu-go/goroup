@@ -40,3 +40,25 @@ func Select(chans ...interface{}) (c interface{}, value interface{}, recvOK bool
 
 	return chans[chosen], recv.Interface(), true
 }
+
+func TrySelect(chans ...interface{}) (c interface{}, value interface{}, recvOK bool) {
+	if len(chans) == 0 {
+		return nil, nil, false
+	}
+
+	for i, c := range chans {
+		cv := reflect.ValueOf(c)
+		if cv.Kind() != reflect.Chan || cv.Type().ChanDir()&reflect.RecvDir == 0 {
+			panic(fmt.Sprintf("%dth element is not a receivable chan (%v)", i, cv.Type().String()))
+		}
+
+		if x, ok := cv.TryRecv(); ok {
+			return c, x.Interface(), true
+		} else if x == reflect.Zero(cv.Type().Elem()) {
+			// closed
+			return c, nil, false
+		}
+	}
+
+	return nil, nil, false
+}
