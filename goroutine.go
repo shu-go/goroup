@@ -1,6 +1,7 @@
 package goroup
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 )
@@ -61,4 +62,14 @@ func TrySelect(chans ...interface{}) (c interface{}, value interface{}, recvOK b
 	}
 
 	return nil, nil, false
+}
+
+func ContextDone(c context.Context) bool {
+	select {
+	case <-c.Done():
+		return true
+	default:
+		return false
+	}
+
 }

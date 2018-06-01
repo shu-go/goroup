@@ -12,99 +12,83 @@ type Group struct {
 }
 
 type rawGroup struct {
-	m     sync.Mutex
-	goers []Goer
+	m        sync.Mutex
+	routines []Routine
 }
 
 // Group makes a Group of Routines and Groups.
-func NewGroup(goers ...Goer) Group {
+func NewGroup(routines ...Routine) Group {
 	return Group{
 		rawGroup: &rawGroup{
-			goers: goers,
+			routines: routines,
 		},
 	}
 }
 
-// Add adds a Goer in the Group.
-func (g Group) Add(ger Goer) {
+// Add adds a Routine in the Group.
+func (g Group) Add(ger Routine) {
 	g.m.Lock()
-	g.goers = append(g.goers, ger)
+	g.routines = append(g.routines, ger)
 	g.m.Unlock()
 }
 
-// PurgeDone removes some Goers that are ended or cancelled.
+// PurgeDone removes some Routines that are ended or cancelled.
 func (g Group) PurgeDone() {
 	g.m.Lock()
-	clise.Filter(&g.goers, func(i int) bool {
-		return !g.goers[i].HasDone()
+	clise.Filter(&g.routines, func(i int) bool {
+		return !g.routines[i].HasDone()
 	})
 	g.m.Unlock()
 }
 
-// Go starts all Goerss.
-func (g Group) Go() {
-	g.m.Lock()
-	if len(g.goers) == 0 {
-		g.m.Unlock()
-		return
-	}
-	goers := make([]Goer, len(g.goers))
-	copy(goers, g.goers)
-	g.m.Unlock()
-
-	for _, r := range goers {
-		r.Go()
-	}
-}
-
-// Cancel cancels all Goers
+// Cancel cancels all Routines
 func (g Group) Cancel() {
 	g.m.Lock()
-	if len(g.goers) == 0 {
+	if len(g.routines) == 0 {
 		g.m.Unlock()
 		return
 	}
-	goers := make([]Goer, len(g.goers))
-	copy(goers, g.goers)
+	routines := make([]Routine, len(g.routines))
+	copy(routines, g.routines)
 	g.m.Unlock()
 
-	for _, r := range goers {
+	for _, r := range routines {
 		r.Cancel()
 	}
 }
 
-// Cancel waits for all Goers end or are cancelled.
+// Cancel waits for all Routines end or are cancelled.
 func (g Group) Wait() {
 	g.m.Lock()
-	if len(g.goers) == 0 {
+	if len(g.routines) == 0 {
 		g.m.Unlock()
 		return
 	}
-	goers := make([]Goer, len(g.goers))
-	copy(goers, g.goers)
+	routines := make([]Routine, len(g.routines))
+	copy(routines, g.routines)
 	g.m.Unlock()
 
-	for _, r := range goers {
+	for _, r := range routines {
 		r.Wait()
 	}
 }
 
-// Cancel waits for a Goer ends or is cancelled.
+// Cancel waits for a Routine ends or is cancelled.
 func (g Group) WaitAny() {
 	g.m.Lock()
-	if len(g.goers) == 0 {
+	if len(g.routines) == 0 {
 		g.m.Unlock()
 		return
 	}
-	goers := make([]Goer, len(g.goers))
-	copy(goers, g.goers)
+	routines := make([]Routine, len(g.routines))
+	copy(routines, g.routines)
 	g.m.Unlock()
 
 	anyDoneOnce := sync.Once{}
 	anyDoneChan := make(chan struct{})
 
-	for _, r := range goers {
-		go func(rr Goer) {
+	for _, r := range routines {
+		go func(rr Routine) {
 			select {
 			case <-rr.Done():
 				anyDoneOnce.Do(func() {
@@ -132,7 +116,7 @@ func (g Group) DoneAny() <-chan struct{} {
 func (g Group) HasDone() bool {
 	g.m.Lock()
 	defer g.m.Unlock()
-	for _, r := range g.goers {
+	for _, r := range g.routines {
 		if !r.HasDone() {
 			return false
 		}
