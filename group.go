@@ -1,6 +1,7 @@
 package goroup
 
 import (
+	"context"
 	"sync"
 
 	"bitbucket.org/shu/clise"
@@ -14,22 +15,9 @@ type Group struct {
 type rawGroup struct {
 	m        sync.Mutex
 	routines []Routine
-}
 
-// Group makes a Group of Routines and Groups.
-func NewGroup(routines ...Routine) Group {
-	return Group{
-		rawGroup: &rawGroup{
-			routines: routines,
-		},
-	}
-}
-
-// Add adds a Routine in the Group.
-func (g Group) Add(ger Routine) {
-	g.m.Lock()
-	g.routines = append(g.routines, ger)
-	g.m.Unlock()
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 // PurgeDone removes some Routines that are ended or cancelled.
@@ -43,18 +31,7 @@ func (g Group) PurgeDone() {
 
 // Cancel cancels all Routines
 func (g Group) Cancel() {
-	g.m.Lock()
-	if len(g.routines) == 0 {
-		g.m.Unlock()
-		return
-	}
-	routines := make([]Routine, len(g.routines))
-	copy(routines, g.routines)
-	g.m.Unlock()
-
-	for _, r := range routines {
-		r.Cancel()
-	}
+	g.cancel()
 }
 
 // Cancel waits for all Routines end or are cancelled.
