@@ -2,6 +2,7 @@ package goroup_test
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -11,45 +12,45 @@ import (
 
 func TestRoutine(t *testing.T) {
 	t.Run("BasicUsage", func(t *testing.T) {
-		result := 0
+		var result int64 = 0
 		f := func(c context.Context, params ...interface{}) {
 			gain := params[0].(int)
-			result += gain
+			atomic.AddInt64(&result, int64(gain))
 		}
 
-		gotwant.Test(t, result, 0)
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(0))
 
 		r := goroup.Go(f, nil, 2)
 
-		gotwant.Test(t, result, 0)
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(0))
 
 		r.Wait()
 
-		gotwant.Test(t, result, 2)
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(2))
 	})
 
 	t.Run("PreRoutine", func(t *testing.T) {
-		result := 0
+		var result int64 = 0
 		pr := goroup.Ready(func(c context.Context, params ...interface{}) {
 			gain := params[0].(int)
-			result += gain
+			atomic.AddInt64(&result, int64(gain))
 		}, 1)
 
-		gotwant.Test(t, result, 0)
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(0))
 
 		r1 := pr.Go(nil)
 		r2 := pr.Go(nil)
 
-		gotwant.Test(t, result, 0)
+		gotwant.TestExpr(t, atomic.LoadInt64(&result), atomic.LoadInt64(&result) >= int64(0))
 
 		r1.Wait()
 		r2.Wait()
 
-		gotwant.Test(t, result, 2)
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(2))
 	})
 
 	t.Run("Cancel", func(t *testing.T) {
-		result := 0
+		var result int64 = 0
 		f := func(c context.Context, params ...interface{}) {
 			time.Sleep(50 * time.Millisecond)
 
@@ -57,18 +58,18 @@ func TestRoutine(t *testing.T) {
 				return
 			}
 
-			result++
+			atomic.AddInt64(&result, int64(1))
 		}
 
-		gotwant.Test(t, result, 0)
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(0))
 
 		r := goroup.Go(f, nil)
 
-		gotwant.Test(t, result, 0)
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(0))
 
 		r.Cancel()
 		r.Wait()
 
-		gotwant.Test(t, result, 0)
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(0))
 	})
 }
