@@ -49,6 +49,30 @@ func TestRoutine(t *testing.T) {
 		gotwant.Test(t, atomic.LoadInt64(&result), int64(2))
 	})
 
+	t.Run("Return", func(t *testing.T) {
+		var result int64 = 0
+		var anotherResult int64 = 0
+		pr := goroup.Ready(func(c context.Context, params ...interface{}) {
+			gain := params[0].(int)
+			another := params[1].(*int64)
+			atomic.AddInt64(&result, int64(gain))
+			atomic.AddInt64(another, 1)
+		}, 1, &anotherResult)
+
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(0))
+
+		r1 := pr.Go(nil)
+		r2 := pr.Go(nil)
+
+		gotwant.TestExpr(t, atomic.LoadInt64(&result), atomic.LoadInt64(&result) >= int64(0))
+
+		r1.Wait()
+		r2.Wait()
+
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(2))
+		gotwant.Test(t, atomic.LoadInt64(&anotherResult), int64(2))
+	})
+
 	t.Run("Cancel", func(t *testing.T) {
 		var result int64 = 0
 		f := func(c context.Context, params ...interface{}) {
