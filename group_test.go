@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/shu/goroup"
-	"bitbucket.org/shu/gotwant"
+	"bitbucket.org/shu_go/goroup"
+	"bitbucket.org/shu_go/gotwant"
 )
 
 func TestGroup(t *testing.T) {
