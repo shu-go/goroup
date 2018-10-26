@@ -16,9 +16,9 @@ func Done(f func()) <-chan struct{} {
 	return doneChan
 }
 
-func Select(chans ...interface{}) (c interface{}, value interface{}, recvOK bool) {
+func Select(chans ...interface{}) (i int, value interface{}, recvOK bool) {
 	if len(chans) == 0 {
-		return nil, nil, false
+		return -1, nil, false
 	}
 
 	var cases []reflect.SelectCase
@@ -36,10 +36,10 @@ func Select(chans ...interface{}) (c interface{}, value interface{}, recvOK bool
 
 	chosen, recv, recvOK := reflect.Select(cases)
 	if !recvOK {
-		return nil, nil, false
+		return -1, nil, false
 	}
 
-	return chans[chosen], recv.Interface(), true
+	return chosen, recv.Interface(), true
 }
 
 func TrySelect(chans ...interface{}) (c interface{}, value interface{}, recvOK bool) {

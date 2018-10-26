@@ -47,7 +47,7 @@ func TestSelect(t *testing.T) {
 
 		c, v, ok = goroup.Select(c1)
 		gotwant.Test(t, ok, true)
-		gotwant.Test(t, c, c1)
+		gotwant.Test(t, c, 0)
 		gotwant.Test(t, v, 1)
 	})
 
@@ -67,7 +67,7 @@ func TestSelect(t *testing.T) {
 		c, v, ok = goroup.Select(c1)
 		gotwant.Test(t, ok, true)
 		gotwant.Test(t, v, 1)
-		gotwant.Test(t, c, c1)
+		gotwant.Test(t, c, 0)
 	})
 
 	t.Run("Multi", func(t *testing.T) {
@@ -87,7 +87,7 @@ func TestSelect(t *testing.T) {
 
 		c, v, ok = goroup.Select(c1, c2, c3)
 		gotwant.Test(t, ok, true)
-		gotwant.Test(t, c, c1)
+		gotwant.Test(t, c, 0)
 		gotwant.Test(t, v, struct{}{})
 
 		go func() {
@@ -104,7 +104,7 @@ func TestSelect(t *testing.T) {
 
 		c, v, ok = goroup.Select(c1, c2, c3)
 		gotwant.Test(t, ok, true)
-		gotwant.Test(t, c, c2)
+		gotwant.Test(t, c, 1)
 		gotwant.Test(t, v, 100)
 
 		c, v, ok = goroup.TrySelect(c1, c2, c3) // consumed, for now
@@ -115,7 +115,7 @@ func TestSelect(t *testing.T) {
 		time.Sleep(50 * time.Millisecond)
 		c, v, ok = goroup.Select(c1, c2, c3)
 		gotwant.Test(t, ok, true)
-		gotwant.Test(t, c, c3)
+		gotwant.Test(t, c, 2)
 		gotwant.Test(t, v, "ichi")
 
 		// DO NOT. causes "fatal error: all goroutines are asleep - deadlock!"
