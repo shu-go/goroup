@@ -11,7 +11,7 @@ func Done(f func()) <-chan struct{} {
 	doneChan := make(chan struct{})
 	go func() {
 		f()
-		doneChan <- struct{}{}
+		close(doneChan)
 	}()
 	return doneChan
 }
