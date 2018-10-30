@@ -13,8 +13,9 @@ type rawQGroup struct {
 	context context.Context
 	cancel  context.CancelFunc
 
-	waitm  sync.Mutex
-	waited bool
+	waitm       sync.Mutex
+	waited      bool
+	waitanyChan chan struct{}
 
 	wg sync.WaitGroup
 
@@ -32,10 +33,11 @@ func NewQueuedGroup(ctx context.Context, limit int64) QGroup {
 
 	g := QGroup{
 		rawQGroup: &rawQGroup{
-			queue:   make(chan PreRoutine),
-			sem:     make(chan struct{}, limit),
-			context: ctx,
-			cancel:  cancel,
+			queue:       make(chan PreRoutine),
+			sem:         make(chan struct{}, limit),
+			context:     ctx,
+			cancel:      cancel,
+			waitanyChan: make(chan struct{}),
 		},
 	}
 	g.dispatcher = Go(g.dispatch, g.context)
@@ -47,7 +49,7 @@ func (g QGroup) Add(pr PreRoutine) {
 	g.waitm.Lock()
 	if g.waited {
 		g.waitm.Unlock()
-		return
+		panic("add while waiting")
 	}
 	g.waitm.Unlock()
 
@@ -67,6 +69,15 @@ func (g QGroup) Wait() {
 	g.wg.Wait()
 }
 
+func (g QGroup) WaitAny() {
+	select {
+	case <-g.context.Done():
+	case <-g.waitanyChan:
+	case <-Done(func() { g.wg.Wait() }):
+	}
+
+}
+
 func (g QGroup) dispatch(ctx context.Context, params ...interface{}) {
 	for {
 		select {
@@ -80,6 +91,10 @@ func (g QGroup) dispatch(ctx context.Context, params ...interface{}) {
 				r.Wait()
 
 				<-g.sem
+				select {
+				case g.waitanyChan <- struct{}{}:
+				default: // nop
+				}
 				g.wg.Done()
 			}(pr)
 		}
