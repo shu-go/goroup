@@ -16,8 +16,8 @@ type rawGroup struct {
 	m        sync.Mutex
 	routines []Routine
 
-	ctx    context.Context
-	cancel context.CancelFunc
+	context context.Context
+	cancel  context.CancelFunc
 }
 
 // PurgeDone removes some Routines that are ended or cancelled.
