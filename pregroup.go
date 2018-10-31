@@ -46,7 +46,7 @@ func (p PreGroup) Go(ctx context.Context) Group {
 	return Group{
 		rawGroup: &rawGroup{
 			routines: routines,
-			ctx:      ctx,
+			context:  ctx,
 			cancel:   cancel,
 		},
 	}
