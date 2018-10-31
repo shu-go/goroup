@@ -14,7 +14,7 @@ func TestQGroup(t *testing.T) {
 	t.Run("BasicUsage", func(t *testing.T) {
 		var result int64 = 0
 
-		qg := goroup.NewQueuedGroup(nil, 1)
+		qg := goroup.NewQueuedGroup(context.TODO(), 1)
 		f := func(c context.Context, params ...interface{}) {
 			gain := params[0].(int)
 			atomic.AddInt64(&result, int64(gain))
@@ -26,7 +26,7 @@ func TestQGroup(t *testing.T) {
 		qg.Wait()
 		gotwant.Test(t, atomic.LoadInt64(&result), int64(2))
 
-		qg = goroup.NewQueuedGroup(nil, 1)
+		qg = goroup.NewQueuedGroup(context.TODO(), 1)
 		qg.Add(goroup.Ready(f, 2))
 		qg.Add(goroup.Ready(f, 2))
 		qg.Add(goroup.Ready(f, 2))
@@ -35,7 +35,7 @@ func TestQGroup(t *testing.T) {
 		qg.Wait()
 		gotwant.Test(t, atomic.LoadInt64(&result), int64(12))
 
-		qg = goroup.NewQueuedGroup(nil, 2)
+		qg = goroup.NewQueuedGroup(context.TODO(), 2)
 		qg.Add(goroup.Ready(f, 2))
 		qg.Add(goroup.Ready(f, 2))
 		qg.Add(goroup.Ready(f, 2))
@@ -51,7 +51,7 @@ func TestQGroup(t *testing.T) {
 			time.Sleep(gain * time.Millisecond)
 		}
 
-		qg := goroup.NewQueuedGroup(nil, 1)
+		qg := goroup.NewQueuedGroup(context.TODO(), 1)
 		stt := time.Now()
 		qg.Add(goroup.Ready(f, 100))
 		qg.Add(goroup.Ready(f, 100))
@@ -61,7 +61,7 @@ func TestQGroup(t *testing.T) {
 		qg.Wait()
 		gotwant.TestExpr(t, stt, time.Since(stt) > 500*time.Millisecond)
 
-		qg = goroup.NewQueuedGroup(nil, 5)
+		qg = goroup.NewQueuedGroup(context.TODO(), 5)
 		stt = time.Now()
 		qg.Add(goroup.Ready(f, 100))
 		qg.Add(goroup.Ready(f, 100))
@@ -75,11 +75,11 @@ func TestQGroup(t *testing.T) {
 	t.Run("WaitAny", func(t *testing.T) {
 		var result int64 = 0
 
-		qg := goroup.NewQueuedGroup(nil, 1)
+		qg := goroup.NewQueuedGroup(context.TODO(), 1)
 		f := func(c context.Context, params ...interface{}) {
 			gain := params[0].(int)
 			atomic.AddInt64(&result, int64(gain))
-			time.Sleep(1)
+			time.Sleep(time.Nanosecond)
 		}
 
 		gotwant.Test(t, atomic.LoadInt64(&result), int64(0))
@@ -102,7 +102,7 @@ func TestQGroup(t *testing.T) {
 	})
 
 	t.Run("WaitAny2", func(t *testing.T) {
-		qg := goroup.NewQueuedGroup(nil, 1)
+		qg := goroup.NewQueuedGroup(context.TODO(), 1)
 
 		select {
 		case <-goroup.Done(qg.WaitAny):
@@ -112,7 +112,7 @@ func TestQGroup(t *testing.T) {
 	})
 
 	t.Run("Wait2", func(t *testing.T) {
-		qg := goroup.NewQueuedGroup(nil, 1)
+		qg := goroup.NewQueuedGroup(context.TODO(), 1)
 
 		select {
 		case <-goroup.Done(qg.Wait):
@@ -124,7 +124,7 @@ func TestQGroup(t *testing.T) {
 	t.Run("Cancel", func(t *testing.T) {
 		var result int64 = 0
 
-		qg := goroup.NewQueuedGroup(nil, 1)
+		qg := goroup.NewQueuedGroup(context.TODO(), 1)
 		f := func(c context.Context, params ...interface{}) {
 			gain := params[0].(int)
 			atomic.AddInt64(&result, int64(gain))
@@ -141,7 +141,7 @@ func TestQGroup(t *testing.T) {
 		qg.Wait()
 		gotwant.TestExpr(t, atomic.LoadInt64(&result), atomic.LoadInt64(&result) >= 0 && atomic.LoadInt64(&result) <= 10)
 
-		qg = goroup.NewQueuedGroup(nil, 5)
+		qg = goroup.NewQueuedGroup(context.TODO(), 5)
 		qg.Add(goroup.Ready(f, 2))
 		qg.Add(goroup.Ready(f, 2))
 		qg.Add(goroup.Ready(f, 2))
