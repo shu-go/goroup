@@ -38,8 +38,8 @@ func TestRoutine(t *testing.T) {
 
 		gotwant.Test(t, atomic.LoadInt64(&result), int64(0))
 
-		r1 := pr.Go(nil)
-		r2 := pr.Go(nil)
+		r1 := pr.Go(context.TODO())
+		r2 := pr.Go(context.TODO())
 
 		gotwant.TestExpr(t, atomic.LoadInt64(&result), atomic.LoadInt64(&result) >= int64(0))
 
@@ -61,8 +61,8 @@ func TestRoutine(t *testing.T) {
 
 		gotwant.Test(t, atomic.LoadInt64(&result), int64(0))
 
-		r1 := pr.Go(nil)
-		r2 := pr.Go(nil)
+		r1 := pr.Go(context.TODO())
+		r2 := pr.Go(context.TODO())
 
 		gotwant.TestExpr(t, atomic.LoadInt64(&result), atomic.LoadInt64(&result) >= int64(0))
 

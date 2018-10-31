@@ -23,7 +23,7 @@ func TestGroup(t *testing.T) {
 
 		gotwant.Test(t, atomic.LoadInt64(&result), int64(0))
 
-		g := pg.Go(nil)
+		g := pg.Go(context.TODO())
 		g.Wait()
 
 		gotwant.Test(t, atomic.LoadInt64(&result), int64(100))
@@ -44,7 +44,7 @@ func TestGroup(t *testing.T) {
 
 		gotwant.Test(t, atomic.LoadInt64(&result), int64(0))
 
-		g := pg.Go(nil)
+		g := pg.Go(context.TODO())
 
 		g.WaitAny()
 		gotwant.TestExpr(t, atomic.LoadInt64(&result), atomic.LoadInt64(&result) > 0)
@@ -72,7 +72,7 @@ func TestGroup(t *testing.T) {
 
 		gotwant.Test(t, atomic.LoadInt64(&result), int64(0))
 
-		g := pg.Go(nil)
+		g := pg.Go(context.TODO())
 
 		g.WaitAny()
 		gotwant.TestExpr(t, atomic.LoadInt64(&result), atomic.LoadInt64(&result) > 0)
