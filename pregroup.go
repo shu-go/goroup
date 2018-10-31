@@ -34,7 +34,7 @@ func (p PreGroup) Go(ctx context.Context) Group {
 	ctx, cancel := context.WithCancel(ctx)
 
 	p.m.Lock()
-	var pres []PreRoutine = make([]PreRoutine, len(p.pres))
+	pres := make([]PreRoutine, len(p.pres))
 	copy(pres, p.pres)
 	p.m.Unlock()
 
