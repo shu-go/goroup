@@ -75,14 +75,14 @@ func (g QGroup) WaitAny() {
 	case <-g.waitanyChan:
 	case <-Done(func() { g.wg.Wait() }):
 	}
-
 }
 
 func (g QGroup) dispatch(ctx context.Context, params ...interface{}) {
+loop:
 	for {
 		select {
 		case <-ctx.Done():
-			break
+			break loop
 		case pr := <-g.queue:
 			g.sem <- struct{}{}
 
