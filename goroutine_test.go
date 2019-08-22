@@ -4,13 +4,17 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/shu_go/goroup"
-	"bitbucket.org/shu_go/gotwant"
+	"github.com/shu-go/goroup"
+	"github.com/shu-go/gotwant"
 )
 
 func TestDone(t *testing.T) {
-	doneChan := goroup.Done(func() { time.Sleep(100 * time.Millisecond) })
-	<-doneChan
+	doneChan := goroup.Done(func() { time.Sleep(10 * time.Millisecond) })
+	select {
+	case <-doneChan:
+	case <-time.After(20 * time.Millisecond):
+		t.Error("timeout")
+	}
 }
 
 func TestSelect(t *testing.T) {
