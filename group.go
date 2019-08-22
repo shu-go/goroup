@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"bitbucket.org/shu_go/clise"
+	"github.com/shu-go/clise"
 )
 
 // Group is a Group of Routines and Groups.

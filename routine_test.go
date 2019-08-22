@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/shu_go/goroup"
-	"bitbucket.org/shu_go/gotwant"
+	"github.com/shu-go/goroup"
+	"github.com/shu-go/gotwant"
 )
 
 func TestRoutine(t *testing.T) {
