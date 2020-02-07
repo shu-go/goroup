@@ -77,4 +77,22 @@ func TestGoroup(t *testing.T) {
 		gg.Wait()
 		gotwant.TestExpr(t, atomic.LoadInt64(&result), atomic.LoadInt64(&result) > int64(0))
 	})
+
+    t.Run("GoAfterWait", func(t *testing.T)  {
+		var result int64 = 0
+		f := func(context.Context) {
+			atomic.AddInt64(&result, int64(1))
+		}
+
+        gg := goroup.New()
+        gg.Add(f)
+        gg.Go()
+        gg.Wait()
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(1))
+
+        gg.Add(f)
+        gg.Go()
+        gg.Wait()
+		gotwant.Test(t, atomic.LoadInt64(&result), int64(2))
+    })
 }
