@@ -78,7 +78,7 @@ func (g *Goroup) Go() {
 
 func (g *Goroup) Wait() {
 	g.wg.Wait()
-	close(g.funcs)
+	//close(g.funcs)
 }
 
 func (g *Goroup) WaitAny() {
