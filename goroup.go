@@ -16,8 +16,6 @@ type Goroup struct {
 
 	anyDoneCtx context.Context
 	anyDone    context.CancelFunc
-	//anyDoneChan chan<- struct{}
-	//anyWaitChan <-chan struct{}
 
 	context context.Context
 	cancel  context.CancelFunc
@@ -30,7 +28,6 @@ func New(opts ...GoroupOption) *Goroup {
 	}
 	g.funcs = make(chan GoroupFunc, g.maxF)
 
-	//g.anyDoneChan, g.anyWaitChan = goroutine.DoneWaitChan()
 	g.anyDoneCtx, g.anyDone = context.WithCancel(context.Background())
 
 	for _, o := range opts {
@@ -78,11 +75,9 @@ func (g *Goroup) Go() {
 
 func (g *Goroup) Wait() {
 	g.wg.Wait()
-	//close(g.funcs)
 }
 
 func (g *Goroup) WaitAny() {
-	//<-g.anyWaitChan
 	<-g.anyDoneCtx.Done()
 }
 
