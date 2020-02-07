@@ -14,6 +14,7 @@ type Goroup struct {
 	maxG  uint
 	maxF  uint
 
+	anyM       sync.Mutex
 	anyDoneCtx context.Context
 	anyDone    context.CancelFunc
 
@@ -27,8 +28,6 @@ func New(opts ...GoroupOption) *Goroup {
 		maxF: 100,
 	}
 	g.funcs = make(chan GoroupFunc, g.maxF)
-
-	g.anyDoneCtx, g.anyDone = context.WithCancel(context.Background())
 
 	for _, o := range opts {
 		o(g)
@@ -54,6 +53,10 @@ func (g *Goroup) Add(f GoroupFunc) {
 func (g *Goroup) Go() {
 	sem := make(chan struct{}, g.maxG)
 
+	g.anyM.Lock()
+	g.anyDoneCtx, g.anyDone = context.WithCancel(context.Background())
+	g.anyM.Unlock()
+
 	go func() {
 		for f := range g.funcs {
 			sem <- struct{}{}
@@ -63,11 +66,9 @@ func (g *Goroup) Go() {
 				g.wg.Done()
 				<-sem
 
-				//select {
-				//case g.anyDoneChan <- struct{}{}:
-				//default:
-				//}
+				g.anyM.Lock()
 				g.anyDone()
+				g.anyM.Unlock()
 			}(f)
 		}
 	}()
@@ -78,7 +79,11 @@ func (g *Goroup) Wait() {
 }
 
 func (g *Goroup) WaitAny() {
-	<-g.anyDoneCtx.Done()
+	g.anyM.Lock()
+    done := g.anyDoneCtx.Done()
+	g.anyM.Unlock()
+
+	<-done
 }
 
 func (g *Goroup) Cancel() {
